@@ -1,0 +1,10 @@
+ApplyLipstick 91
+CricketShot 92
+HammerThrow 93
+HandstandPushups 94
+HighJump 95
+HorseRiding 96
+PlayingDaf 97
+PlayingGuitar 98
+Shotput 99
+SkateBoarding 100
