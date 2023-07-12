@@ -1,0 +1,35 @@
+device: cuda
+workdir: 'workdirs'
+n_way: 5
+k_shot: 1
+n_query: 3
+n_seg: 4
+eval_interval: 1000
+ckpt_interval: 2000
+
+dataset:
+  train:
+    num_episodes: 20000
+    root_dir: 'data/ucf101'
+    class_path: 'ucf101/train.json'
+  val:
+    num_episodes: 1000
+    root_dir: 'data/ucf101'
+    class_path: 'ucf101/val.json'
+  test:
+    num_episodes: 2000
+    root_dir: 'data/ucf101'
+    class_path: 'ucf101/test.json'
+class_path:
+  train: 'ucf101/train.json'
+  val: 'ucf101/val.json'
+  test: 'ucf101/test.json'
+
+pretrained: 'pretrained/c3d_sports1m-pretrained.pt'
+
+log: False
+wandb:
+  project: 'few-shot-action-recognition'
+  group: 'ucf101_c3d'
+  secret_file: 'secret_key.yaml'
+

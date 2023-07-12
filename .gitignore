@@ -1,12 +1,9 @@
 data/
 *.pt
 *.pth
-opt.yaml
 secret_key.yaml
 workdirs/
 *.log
-*.yaml
-*.sh
 __pycache__/
 wandb/
 # Byte-compiled / optimized / DLL files

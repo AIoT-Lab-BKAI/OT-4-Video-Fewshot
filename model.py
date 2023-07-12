@@ -12,9 +12,9 @@ class C3DModel(nn.Module):
     The C3D network.
     """
 
-    def __init__(self, nseg):
+    def __init__(self, cfg):
         super(C3DModel, self).__init__()
-
+        self.cfg = cfg
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
 
@@ -39,6 +39,7 @@ class C3DModel(nn.Module):
         self.relu = nn.ReLU()
         self.__init_weight()
         
+        nseg = cfg['n_seg']
         self.ot_reg = 7.0
         self.cost_alpha = 0.4
         self.pos_cost_phi = 1.0
@@ -83,32 +84,35 @@ class C3DModel(nn.Module):
     
     def forward(self, support_set, query_set):
         # assumption: 
-        nbatch, nway, kshot, nseg, c, seglen, h, w = support_set.shape
-        nbatch, nquery, nseg, c, seglen, h, w = query_set.shape
-
+        # each class instance lies consecutively
+        _, _, c, seglen, h, w = support_set.shape
+        n_way = self.cfg['n_way']
+        k_shot = self.cfg['k_shot']
+        n_seg = self.cfg['n_seg']
+        # n_query = n_way * cfg.n_query
+        n_query = query_set.shape[0]
+        
         sp_set = support_set.reshape((-1, c, seglen, h, w))
         sp_set = self.encode(sp_set)
-        sp_set = sp_set.reshape((nbatch, nway, kshot, nseg, -1))
+        sp_set = sp_set.reshape((n_way, k_shot, n_seg, -1))
 
         q_set = query_set.reshape((-1, c, seglen, h, w))
         q_set = self.encode(q_set)
-        q_set = q_set.reshape((nbatch, nquery, nseg, -1))
+        q_set = q_set.reshape((n_query, n_seg, -1))
 
-
-        cost_matrix = torch.zeros((nbatch, nquery, nway, kshot, nseg, nseg), dtype=torch.float32).to(support_set.device)
-        for batch in range(nbatch):
-            for query in range(nquery):
-                for label in range(nway):
-                    for shot in range(kshot):
-                        cost_matrix[batch, query, label, shot] = torch.cdist(sp_set[batch, label, shot], q_set[batch, query], p=2)
+        cost_matrix = torch.zeros((n_query, n_way, k_shot, n_seg, n_seg), dtype=torch.float32).to(support_set.device)
+        for query in range(n_query):
+            for label in range(n_way):
+                for shot in range(k_shot):
+                    cost_matrix[query, label, shot] = torch.cdist(sp_set[label, shot], q_set[query], p=2)
         
         cost_matrix_c = cost_matrix.detach().cpu().numpy()
-        trans_plan = np.zeros((nbatch, nquery, nway, kshot, nseg, nseg), dtype=np.float32)
-        for batch in range(nbatch):
-            for query in range(nquery):
-                for label in range(nway):
-                    for shot in range(kshot):
-                        trans_plan[batch, query, label, shot] = self.optimal_transport(cost_matrix_c[batch, query, label, shot])
+        trans_plan = np.zeros((n_query, n_way, k_shot, n_seg, n_seg), dtype=np.float32)
+        for query in range(n_query):
+            for label in range(n_way):
+                for shot in range(k_shot):
+                    trans_plan[query, label, shot] = self.optimal_transport(cost_matrix_c[query, label, shot])
+        
         trans_plan = torch.from_numpy(trans_plan).to(cost_matrix.device)
         trans_cost = torch.mul(cost_matrix, trans_plan).sum((-2, -1)) - (1/self.ot_reg)*entropy(trans_plan)
         trans_cost = torch.mean(trans_cost, dim=(-1))
