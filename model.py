@@ -39,8 +39,8 @@ class C3DModel(nn.Module):
         self.relu = nn.ReLU()
         self.__init_weight()
         
-        self.ot_reg = 1.0
-        self.cost_alpha = 0.1
+        self.ot_reg = 7.0
+        self.cost_alpha = 0.4
         self.pos_cost_phi = 1.0
         self.ot_dist= np.ones((nseg), dtype=np.float32) / nseg
         self.positional_cost = np.zeros((nseg, nseg), dtype=np.float32)
@@ -51,6 +51,8 @@ class C3DModel(nn.Module):
     def optimal_transport(self, sem_cost_matrix):
         cost_matrix = sem_cost_matrix + self.cost_alpha * self.positional_cost
         trans_plan = ot.sinkhorn(self.ot_dist, self.ot_dist, cost_matrix, self.ot_reg)
+        if (np.any(np.isnan(trans_plan))):
+            trans_plan = self.ot_dist[:, np.newaxis] * self.ot_dist[np.newaxis, :]
         return trans_plan
 
     def encode(self, x):
@@ -107,7 +109,6 @@ class C3DModel(nn.Module):
                 for label in range(nway):
                     for shot in range(kshot):
                         trans_plan[batch, query, label, shot] = self.optimal_transport(cost_matrix_c[batch, query, label, shot])
-        
         trans_plan = torch.from_numpy(trans_plan).to(cost_matrix.device)
         trans_cost = torch.mul(cost_matrix, trans_plan).sum((-2, -1)) - (1/self.ot_reg)*entropy(trans_plan)
         trans_cost = torch.mean(trans_cost, dim=(-1))

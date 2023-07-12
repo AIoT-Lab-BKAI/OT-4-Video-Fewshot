@@ -100,6 +100,7 @@ class UCF101Dataset(Dataset):
         offsets = self.normalize_offsets
         for i, offset in enumerate(offsets):
             frames[..., i] -= offset
+        frames /= 255.0
         return frames
     
     def __len__(self):
@@ -117,20 +118,21 @@ class UCF101Dataset(Dataset):
             data = self.crop_frames(data)
             data = self.normalize(data)
             datas.append(data)
-        
+
         support_set = np.stack(datas[:self.n_way*self.k_shot])
         support_set = support_set.reshape(self.n_way, self.k_shot, *support_set.shape[1:])
         support_set = support_set.transpose(0, 1, 2, 6, 3, 4, 5)
 
         query_set = np.stack(datas[self.n_way*self.k_shot:])
-        query_set = query_set.reshape(self.n_way, self.k_shot, *query_set.shape[1:])
-        query_set = query_set.transpose(0, 1, 2, 6, 3, 4, 5)
+        query_set = query_set.reshape(self.n_way, *query_set.shape[1:])
+        query_set = query_set.transpose(0, 1, 5, 2, 3, 4)
 
 
         labels = np.array([UCF101Dataset.CLASS_IDS[label] for label in labels])
         
         data = {
-            "labels": labels,
+            "support_labels": labels,
+            "query_labels": labels,
             "support_set": support_set,
             "query_set": query_set
         }
