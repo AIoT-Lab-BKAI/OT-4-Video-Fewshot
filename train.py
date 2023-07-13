@@ -148,9 +148,9 @@ class Trainer():
     def test(self):
         model = self.model
         if hasattr(self, 'best_model') and self.best_model:
-            ckpt = torch.load(self.best_model)
-                
-        model.load_state_dict(ckpt['state_dict'])
+            ckpt = torch.load(self.best_model)    
+            model.load_state_dict(ckpt['state_dict'])
+        
         model.eval()
         
         loader = self.dataloader['test']

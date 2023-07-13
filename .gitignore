@@ -1,3 +1,5 @@
+pretrained/
+ucf101/
 data/
 *.pt
 *.pth
