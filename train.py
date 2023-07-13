@@ -71,8 +71,9 @@ class Trainer():
         
         # prepare model
         self.model = C3DModel(cfg).to(cfg['device'])
-        ckpt = torch.load(cfg['pretrained'])
-        self.model.load_state_dict(ckpt['state_dict'])
+        if hasattr(cfg, 'pretrained') and cfg['pretrained']:
+            ckpt = torch.load(cfg['pretrained'])
+            self.model.load_state_dict(ckpt['state_dict'])
         # prepare optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         

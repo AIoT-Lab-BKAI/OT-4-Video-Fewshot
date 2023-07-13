@@ -1,5 +1,7 @@
+*.pyc
+tmp.py
 pretrained/
-ucf101/
+ucf101_sample/
 data/
 *.pt
 *.pth

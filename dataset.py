@@ -8,6 +8,7 @@ import json
 from easyfsl.samplers import TaskSampler
 
 class UCF101Dataset(Dataset):
+    # all class
     CLASS_IDS = {cls:i for i, cls in enumerate(json.load(open('ucf101/classes.json', 'r')))}
     def __init__(self, root_dir, classes, nseg=4, seglen=16):
         self.nseg = nseg

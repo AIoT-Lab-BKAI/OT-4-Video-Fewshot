@@ -9,16 +9,16 @@ ckpt_interval: 2000
 dataset:
   train:
     num_episodes: 2
-    root_dir: 'ucf101'
-    class_path: 'ucf101/train.json'
+    root_dir: 'ucf101_sample'
+    class_path: 'ucf101_sample/train.json'
   val:
     num_episodes: 1
-    root_dir: 'ucf101'
-    class_path: 'ucf101/val.json'
+    root_dir: 'ucf101_sample'
+    class_path: 'ucf101_sample/val.json'
   test:
     num_episodes: 1
-    root_dir: 'ucf101'
-    class_path: 'ucf101/test.json'
+    root_dir: 'ucf101_sample'
+    class_path: 'ucf101_sample/test.json'
 
 pretrained:
 
