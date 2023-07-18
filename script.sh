@@ -2,3 +2,5 @@
 python train.py config/opt.yaml
 # this is the debug command
 python train.py config/opt_test.yaml
+srun --nodelist=slurmnode4 --pty bash -i
+python trainer.py
