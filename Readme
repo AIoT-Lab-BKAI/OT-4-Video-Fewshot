@@ -1,3 +1,4 @@
 All config file for model can be found in folder config/
 Since data test is limited (10 classes 2 data instance each), only config opt_test.yaml is valid
 Download data from https://husteduvn-my.sharepoint.com/:f:/g/personal/bach_vv200061_sis_hust_edu_vn/EnnHqTr_3x1Ai4NILzm2eKEBHE8TZ8Fd8kiSwAZv9_sFDA?e=UDqOnu
+To run TRX model, please use python trainer.py
