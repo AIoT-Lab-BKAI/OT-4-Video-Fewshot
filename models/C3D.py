@@ -4,6 +4,17 @@ import numpy as np
 import ot
 from easydict import EasyDict as edict
 
+def cosine_similarity(set1, set2):
+    set1_norm = torch.linalg.norm(set1, dim=1, keepdim=True)
+    set1_normalized = set1 / set1_norm
+
+    set2_norm = torch.linalg.norm(set2, dim=1, keepdim=True)
+    set2_normalized = set2 / set2_norm
+
+    # Compute cosine similarity
+    cosine_sim= torch.mm(set1_normalized, set2_normalized.T)
+    return cosine_sim
+
 class C3D(nn.Module):
     """
     The C3D network.
@@ -11,30 +22,41 @@ class C3D(nn.Module):
 
     def __init__(self, cfg):
         super(C3D, self).__init__()
+        # code copy from https://github.com/DavideA/c3d-pytorch
         self.cfg = cfg
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.bn1 = nn.BatchNorm3d(64)
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
 
         self.conv2 = nn.Conv3d(64, 128, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.bn2 =  nn.BatchNorm3d(128)
         self.pool2 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
 
         self.conv3a = nn.Conv3d(128, 256, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.conv3b = nn.Conv3d(256, 256, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.bn3 =  nn.BatchNorm3d(256)
         self.pool3 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
 
         self.conv4a = nn.Conv3d(256, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.conv4b = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.bn4 =  nn.BatchNorm3d(512)
         self.pool4 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
 
         self.conv5a = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.conv5b = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.bn5 = nn.BatchNorm3d(512)
         self.pool5 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(0, 1, 1))
 
         self.fc6 = nn.Linear(8192, 4096)
+        self.bn6 = nn.BatchNorm1d(4096)
         self.fc7 = nn.Linear(4096, 4096)
+        self.bn7 = nn.BatchNorm1d(4096)
         self.dropout = nn.Dropout(p=0.5)
         self.relu = nn.ReLU()
-        self.__init_weight()
+        if "checkpoint" in cfg.keys():
+            self.load_state_dict(torch.load(cfg["checkpoint"])['state_dict'], strict=False)
+        else:
+            self.__init_weight()
         
         nseg = cfg['n_seg']
         self.ot_dist= np.ones((nseg), dtype=np.float64) / nseg
@@ -54,35 +76,43 @@ class C3D(nn.Module):
         else:
             cost_matrix = sem_cost_matrix
         
-        numItermax = self.cfg.numItermax if hasattr(self.cfg, 'numItermax') else 10000
+        # normalize cost matrix
+        # cost_matrix = cost_matrix / np.maximum(np.max(cost_matrix), 1.0)
+        # tuning parameter
+        numItermax = self.cfg.numItermax if hasattr(self.cfg, 'numItermax') else 1000
+        
         trans_plan = ot.sinkhorn(self.ot_dist, self.ot_dist, cost_matrix, self.cfg.entropic_reg, numItermax=numItermax)
-        if (np.any(np.isnan(trans_plan))):
+        
+        # handle failed case
+        if (np.any(np.isnan(trans_plan)) or np.sum(trans_plan) == 0):
             trans_plan = self.ot_dist[:, np.newaxis] * self.ot_dist[np.newaxis, :]
         
         return trans_plan
 
     def encode(self, x):
-        x = self.relu(self.conv1(x))
+        x = self.relu(self.bn1(self.conv1(x)))
         x = self.pool1(x)
 
-        x = self.relu(self.conv2(x))
+        x = self.relu(self.bn2(self.conv2(x)))
         x = self.pool2(x)
 
         x = self.relu(self.conv3a(x))
-        x = self.relu(self.conv3b(x))
+        x = self.relu(self.bn3(self.conv3b(x)))
         x = self.pool3(x)
 
         x = self.relu(self.conv4a(x))
-        x = self.relu(self.conv4b(x))
+        x = self.relu(self.bn4(self.conv4b(x)))
         x = self.pool4(x)
 
         x = self.relu(self.conv5a(x))
-        x = self.relu(self.conv5b(x))
+        x = self.relu(self.bn5(self.conv5b(x)))
         x = self.pool5(x)
+        
         x = x.view(-1, 8192)
-        x = self.relu(self.fc6(x))
+        x = self.relu(self.bn6(self.fc6(x)))
         x = self.dropout(x)
-        x = self.relu(self.fc7(x))
+        
+        x = self.relu(self.bn7(self.fc7(x)))
         x = self.dropout(x)
 
         return x
@@ -104,11 +134,16 @@ class C3D(nn.Module):
         q_set = query_set.transpose(2, 3).reshape((-1, c, seglen, h, w))
         q_set = self.encode(q_set)
         q_set = q_set.reshape((total_query, n_seg, -1))
-
+        
+        # total_query: total number of query instances Ex: 5 labels each has 5 query instances, therefore total_query = 25
+        # total_sp: total number of support instances Ex: 5 labels each has 1 support instances, therefore total_sp = 5
+        # n_seg: number of segments of each video
+        # sp_set: total_sp x n_seg x feature_dim
+        # q_set: total_query x n_seg x feature_dim
         cost_matrix = torch.zeros((total_query, total_sp, n_seg, n_seg), dtype=torch.float32).to(support_set.device)
         for query in range(total_query):
             for shot in range(total_sp):
-                cost_matrix[query, shot] = torch.cdist(sp_set[shot], q_set[query], p=2)
+                cost_matrix[query, shot] = 1 - cosine_similarity(q_set[query], sp_set[shot])
         
         cost_matrix_c = cost_matrix.detach().cpu().numpy().astype(np.float64)
         trans_plan = np.zeros((total_query, total_sp, n_seg, n_seg), dtype=np.float64)
@@ -118,8 +153,11 @@ class C3D(nn.Module):
 
         
         trans_plan = torch.from_numpy(trans_plan).to(cost_matrix.device).float()
-        entropy = -torch.sum(trans_plan * torch.log(trans_plan + 1e-10), dim=(-2, -1))
-        trans_cost = torch.mul(cost_matrix, trans_plan).sum((-2, -1)) - self.cfg.entropic_reg*entropy
+        # with regulization term
+        # entropy = -torch.sum(trans_plan * torch.log(trans_plan + 1e-10), dim=(-2, -1))
+        # trans_cost = torch.mul(cost_matrix, trans_plan).sum((-2, -1)) - self.cfg.entropic_reg*entropy
+        trans_cost = torch.mul(trans_plan, cost_matrix).sum((-2, -1))
+
         trans_cost = trans_cost.reshape((total_query, n_way, n_shot)).mean(dim=-1)
         trans_cost = -trans_cost
         
@@ -127,11 +165,11 @@ class C3D(nn.Module):
                         
     def __init_weight(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv3d):
+            if isinstance(m, nn.Conv3d) or isinstance(m, nn.Linear):
                 # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 # m.weight.data.normal_(0, math.sqrt(2. / n))
                 torch.nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
+            elif isinstance(m, nn.BatchNorm3d) or isinstance(m, nn.BatchNorm1d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 

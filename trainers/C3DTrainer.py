@@ -1,7 +1,7 @@
 
 import sys
 sys.path.append('/vinserver_user/bach.vv200061/optimal-transport-c3d')
-import lightning.pytorch as pl
+import pytorch_lightning as pl
 import torch
 from easydict import EasyDict as edict
 from utils.utils import accuracy, get_checkpoint_callback, get_episodic_dataloader, get_wandb_logger, mean_confidence_interval
@@ -13,18 +13,17 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.optim import Adam
 import torch.nn as nn
 import json
-
-
-
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 
 class C3DLightning(pl.LightningModule):
     def __init__(self, model_cfg, cfg):
         super().__init__()
         self.model = C3D(model_cfg)
         
-        if hasattr(model_cfg, 'ckpt'):
-            ckpt = torch.load(model_cfg.ckpt)
-            self.model.load_state_dict(ckpt['state_dict'])
+        if hasattr(cfg, 'ckpt'):
+            ckpt = torch.load(cfg.ckpt)
+            self.model.load_state_dict(ckpt['state_dict'], strict=False)
         
         self.cfg = cfg
         
@@ -32,7 +31,7 @@ class C3DLightning(pl.LightningModule):
         self.accuracy_fn = accuracy
         
         self.automatic_optimization = False
- 
+
     def training_step(self, batch, batch_idx):
         sp_set, sp_labels, q_set, q_labels, _ = batch
         q_labels = torch.repeat_interleave(torch.arange(self.cfg.n_way), self.cfg.n_query).to(sp_set.device)
@@ -80,14 +79,27 @@ class C3DLightning(pl.LightningModule):
 
         accuracy = self.accuracy_fn(pred_logits, q_labels, calc_mean=False)
         self.accuracies += accuracy.tolist()
+
+        mean_acc = torch.mean(accuracy)
+        self.log('test_acc', mean_acc, on_step=True, prog_bar=True, batch_size=self.cfg.batch_size)
+
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.cfg.learning_rate)
         lr_scheduler = MultiStepLR(optimizer, milestones=self.cfg.lr_decay_step, gamma=0.1)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
+import os
+from datetime import datetime
+def get_current_time():
+    # return file name as current time
+    now = datetime.now()
+    return  now.strftime("%d_%m_%H_%M_%S")
 
 if __name__ == '__main__':
+    workdir = f'workdirs/c3d/{get_current_time()}'
+    os.makedirs(workdir, exist_ok=True)
+
     class_path = dict(train='config/train.json', val='config/val.json', test='config/test.json')
     dataset_general_cfg = edict(
         n_seg = 4,
@@ -116,14 +128,16 @@ if __name__ == '__main__':
     dataloader_cfg = edict(
         train = 20000,
         val = 500,
-        test = 10000
+        test = 1000
     )
     model_cfg = edict(
+        checkpoint="pretrained/c3d_sports1m-pretrained.pt",
         use_positional_cost = False,
-        entropic_reg = 0.1,
+        entropic_reg = 0.001,
         **dataset_general_cfg
     )
     training_cfg = edict(
+        ckpt='pretrained/c3d_sports1m-pretrained.pt',
         batch_size=1,
         learning_rate = 1e-3,
         lr_decay_step = [100000],
@@ -140,27 +154,32 @@ if __name__ == '__main__':
     logger_cfg = {
         'entity': 'aiotlab',
         'project': 'few-shot-action-recognition',
-        'group': 'trx'
+        'group': 'c3d'
     }
     ckpt_cfg = edict(
         save_top_k=1,
         monitor='val_acc',
-        mode='min',
+        mode='max',
         save_last=True,
-        dirpath='workdirs/c3d'
+        dirpath=workdir
     )
-
+    checkpoint = None
+    
     dataset = {}
     dataloader = {}
     for name in ['train', 'val', 'test']:
         dataset[name] = UCF101_C3D(dataset_cfg[name])
         n_way, n_shot, n_query = dataset_general_cfg.n_way, dataset_general_cfg.n_shot, dataset_general_cfg.n_query
         sampler = TaskSampler(dataset[name], n_way=n_way, n_shot=n_shot, n_query=n_query, n_tasks=dataloader_cfg[name])
-        dataloader[name] = DataLoader(dataset[name], batch_sampler=sampler, num_workers=2, pin_memory=True, collate_fn=sampler.episodic_collate_fn)
+        dataloader[name] = DataLoader(dataset[name], batch_sampler=sampler, num_workers=4, pin_memory=True, collate_fn=sampler.episodic_collate_fn)
     
-    model = C3DLightning(model_cfg, training_cfg)
-
-    logger = get_wandb_logger(logger_cfg)
+    if checkpoint is not None:
+        model = C3DLightning.load_from_checkpoint(checkpoint_path=checkpoint, model_cfg=model_cfg, cfg=training_cfg)
+    else:
+        model = C3DLightning(model_cfg, training_cfg)
+ 
+    # logger = get_wandb_logger(logger_cfg)
+    logger = None
     ckpt_callback = pl.callbacks.ModelCheckpoint(**ckpt_cfg)
     lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval='step')
     

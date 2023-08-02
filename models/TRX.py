@@ -3,8 +3,9 @@ import torch.nn as nn
 from collections import OrderedDict
 import math
 from itertools import combinations 
-from easydict import EasyDict as edict
+
 from torch.autograd import Variable
+from torchvision.models import resnet50, ResNet50_Weights
 
 import torchvision.models as models
 
@@ -67,7 +68,6 @@ class TemporalCrossTransformer(nn.Module):
     
     
     def forward(self, support_set, support_labels, queries):
-        self.tuples = [x.to(support_set.device) for x in self.tuples]
         n_queries = queries.shape[0]
         n_support = support_set.shape[0]
         
@@ -76,8 +76,12 @@ class TemporalCrossTransformer(nn.Module):
         queries = self.pe(queries)
 
         # construct new queries and support set made of tuples of images after pe
-        s = [torch.index_select(support_set, -2, p).reshape(n_support, -1) for p in self.tuples]
-        q = [torch.index_select(queries, -2, p).reshape(n_queries, -1) for p in self.tuples]
+        tuples = [x.to(support_set.device) for x in self.tuples]
+        s = [torch.index_select(support_set, -2, p).reshape(n_support, -1) for p in tuples]
+        
+        tuples = [x.to(queries.device) for x in self.tuples]
+        q = [torch.index_select(queries, -2, p).reshape(n_queries, -1) for p in tuples]
+        
         support_set = torch.stack(s, dim=-2)
         queries = torch.stack(q, dim=-2)
 
@@ -96,7 +100,7 @@ class TemporalCrossTransformer(nn.Module):
         unique_labels = torch.unique(support_labels)
 
         # init tensor to hold distances between every support tuple and every target tuple
-        all_distances_tensor = torch.zeros(n_queries, self.args.way).to(support_set.device)
+        all_distances_tensor = torch.zeros(n_queries, self.args.way)
 
         for label_idx, c in enumerate(unique_labels):
         
@@ -156,15 +160,14 @@ class CNN_TRX(nn.Module):
     def __init__(self, args):
         super(CNN_TRX, self).__init__()
 
-        self.train()
         self.args = args
 
         if self.args.method == "resnet18":
-            resnet = models.resnet18(weights="DEFAULT")  
+            resnet = models.resnet18(pretrained=True)  
         elif self.args.method == "resnet34":
-            resnet = models.resnet34(weights="DEFAULT")
+            resnet = models.resnet34(pretrained=True)
         elif self.args.method == "resnet50":
-            resnet = models.resnet50(weights="DEFAULT")
+            resnet = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
 
         last_layer_idx = -1
         self.resnet = nn.Sequential(*list(resnet.children())[:last_layer_idx])
@@ -172,10 +175,13 @@ class CNN_TRX(nn.Module):
         self.transformers = nn.ModuleList([TemporalCrossTransformer(args, s) for s in args.temp_set]) 
 
     def forward(self, context_images, context_labels, target_images):
-        _, _, nc, dim, dim = context_images.shape
-        context_images = context_images.view(-1, nc, dim, dim)
-        target_images = target_images.view(-1, nc, dim, dim)
-        
+        # TODO: custom code
+        args = self.args
+        n_way, n_shot, seq_len, n_query, img_size = args.n_way, args.n_shot, args.seq_len, args.n_query, args.img_size
+        context_images = context_images.view(n_way*n_shot*seq_len, 3, img_size, img_size)
+        target_images = target_images.view(n_way*n_query*seq_len, 3, img_size, img_size)
+        #
+
         context_features = self.resnet(context_images).squeeze()
         target_features = self.resnet(target_images).squeeze()
 
@@ -188,9 +194,8 @@ class CNN_TRX(nn.Module):
         all_logits = torch.stack(all_logits, dim=-1)
         sample_logits = all_logits 
         sample_logits = torch.mean(sample_logits, dim=[-1])
-
-        logits = split_first_dim_linear(sample_logits, [NUM_SAMPLES, target_features.shape[0]])
-        return logits
+        
+        return sample_logits
 
     def distribute_model(self):
         """
@@ -202,6 +207,7 @@ class CNN_TRX(nn.Module):
             self.resnet = torch.nn.DataParallel(self.resnet, device_ids=[i for i in range(0, self.args.num_gpus)])
 
             self.transformers.cuda(0)
+
 
 
 if __name__ == "__main__":
@@ -219,14 +225,18 @@ if __name__ == "__main__":
             self.method = "resnet18"
             self.num_gpus = 1
             self.temp_set = [2,3]
+            self.n_way = 5
+            self.n_shot = 1
+            self.n_query = 5
+    
     args = ArgsObject()
     torch.manual_seed(0)
     
     device = 'cuda:0'
     model = CNN_TRX(args).to(device)
     
-    support_imgs = torch.rand(args.way * args.shot * args.seq_len,3, args.img_size, args.img_size).to(device)
-    target_imgs = torch.rand(args.way * args.query_per_class * args.seq_len ,3, args.img_size, args.img_size).to(device)
+    support_imgs = torch.rand(args.way , args.shot , args.seq_len,3, args.img_size, args.img_size).to(device)
+    target_imgs = torch.rand(args.way , args.query_per_class , args.seq_len ,3, args.img_size, args.img_size).to(device)
     support_labels = torch.tensor([0,1,2,3,4]).to(device)
 
     print("Support images input shape: {}".format(support_imgs.shape))
@@ -236,6 +246,7 @@ if __name__ == "__main__":
     out = model(support_imgs, support_labels, target_imgs)
 
     print("TRX returns the distances from each query to each class prototype.  Use these as logits.  Shape: {}".format(out['logits'].shape))
+
 
 
 
