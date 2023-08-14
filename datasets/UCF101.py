@@ -7,8 +7,9 @@ from PIL import Image
 import json
 from easyfsl.samplers import TaskSampler
 import torchvision.transforms as transforms
-from easydict import EasyDict as edict
 import glob
+from abc import abstractmethod
+
 def sample_frames(frames, nseg, seglen):
     # get 4 segment of videos with 16 frames each
     total_len = nseg * seglen
@@ -26,7 +27,33 @@ def sample_frames(frames, nseg, seglen):
     
     return segments
 
+class UCF101(Dataset):
+    def __init__(self, root_dir, split_path, class_id_path, train=False):
+        with open(split_path, 'r') as f:
+            paths = f.readlines()
+        
+        paths = [path.strip() for path in paths]
+        self.labels = [path.split('/')[0] for path in paths]
+       
+        video_paths = [os.path.join(root_dir, path) for path in paths]
+        self.paths = [glob.glob(os.path.join(video_path, '*.jpg')) for video_path in video_paths]
+        self.paths = [sorted(path) for path in self.paths]
+        
+        self.class_id = json.load(open(class_id_path, 'r'))
+        self.labels = [self.class_id[label] for label in self.labels]
+
+        self.train = train
     
+    def __len__(self):
+        return len(self.labels)
+    
+    @abstractmethod
+    def __getitem__(self, idx):
+        pass
+
+    def get_labels(self):
+        return self.labels
+
 class UCF101_C3D(Dataset):
     # all class
     def __init__(self, args):

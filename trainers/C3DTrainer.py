@@ -20,11 +20,7 @@ class C3DLightning(pl.LightningModule):
     def __init__(self, model_cfg, cfg):
         super().__init__()
         self.model = C3D(model_cfg)
-        
-        if hasattr(cfg, 'ckpt'):
-            ckpt = torch.load(cfg.ckpt)
-            self.model.load_state_dict(ckpt['state_dict'], strict=False)
-        
+
         self.cfg = cfg
         
         self.loss_fn = nn.CrossEntropyLoss()
@@ -133,7 +129,7 @@ if __name__ == '__main__':
     model_cfg = edict(
         checkpoint="pretrained/c3d_sports1m-pretrained.pt",
         use_positional_cost = False,
-        entropic_reg = 0.001,
+        entropic_reg = 0.1,
         **dataset_general_cfg
     )
     training_cfg = edict(

@@ -1,14 +1,5 @@
-2023-08-02 03:24:39.168545: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+2023-08-02 17:50:42.771216: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: SSE4.1 SSE4.2 AVX AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-wandb: Currently logged in as: vuvietbach (aiotlab). Use `wandb login --relogin` to force relogin
-wandb: - Waiting for wandb.init()...wandb: \ Waiting for wandb.init()...wandb: wandb version 0.15.8 is available!  To upgrade, please run:
-wandb:  $ pip install wandb --upgrade
-wandb: Tracking run with wandb version 0.15.5
-wandb: Run data is saved locally in ./wandb/run-20230802_032445-185o5zsb
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run prime-meadow-31
-wandb: ⭐️ View project at https://wandb.ai/aiotlab/few-shot-action-recognition
-wandb: 🚀 View run at https://wandb.ai/aiotlab/few-shot-action-recognition/runs/185o5zsb
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
 IPU available: False, using: 0 IPUs
@@ -29,9 +20,9 @@ SLURM auto-requeueing enabled. Setting signal handlers.
 /home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/bregman.py:535: UserWarning: Sinkhorn did not converge. You might want to increase the number of iterations `numItermax` or the regularization parameter `reg`.
   warnings.warn("Sinkhorn did not converge. You might want to "
 srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd-slurmnode2: error: *** JOB 11412 ON slurmnode2 CANCELLED AT 2023-08-02T10:23:43 ***
 srun: got SIGCONT
-slurmstepd-slurmnode2: error: *** STEP 11412.0 ON slurmnode2 CANCELLED AT 2023-08-02T10:23:43 ***
+slurmstepd-slurmnode2: error: *** JOB 11452 ON slurmnode2 CANCELLED AT 2023-08-03T03:19:50 ***
+slurmstepd-slurmnode2: error: *** STEP 11452.0 ON slurmnode2 CANCELLED AT 2023-08-03T03:19:50 ***
 srun: forcing job termination
 [rank: 0] Received SIGTERM: 15
 Bypassing SIGTERM: 15
@@ -50,51 +41,55 @@ Traceback (most recent call last):
     self.advance()
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 354, in advance
     self.epoch_loop.run(self._data_fetcher)
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 133, in run
-    self.advance(data_fetcher)
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 220, in advance
-    batch_output = self.manual_optimization.run(kwargs)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/manual.py", line 90, in run
-    self.advance(kwargs)
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/manual.py", line 109, in advance
-    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 134, in run
+    self.on_advance_end()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 248, in on_advance_end
+    self.val_loop.run()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/utilities.py", line 177, in _decorator
+    return loop_run(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 115, in run
+    self._evaluation_step(batch, batch_idx, dataloader_idx)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 375, in _evaluation_step
+    output = call._call_strategy_hook(trainer, hook_name, *step_kwargs.values())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 291, in _call_strategy_hook
     output = fn(*args, **kwargs)
              ^^^^^^^^^^^^^^^^^^^
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 367, in training_step
-    return self.model.training_step(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/C3DTrainer.py", line 39, in training_step
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 379, in validation_step
+    return self.model.validation_step(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/C3DTrainer.py", line 55, in validation_step
     pred_logits = self.model(sp_set, q_set)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
     return forward_call(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/models/C3D.py", line 149, in forward
-    trans_plan[query, shot] = self.optimal_transport(cost_matrix_c[query, shot])
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/models/C3D.py", line 81, in optimal_transport
-    trans_plan = ot.sinkhorn(self.ot_dist, self.ot_dist, cost_matrix, self.cfg.entropic_reg, numItermax=numItermax)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/models/C3D.py", line 150, in forward
+    trans_cost = trans_cost.reshape((total_query, n_way, n_shot)).mean(dim=-1)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/models/C3D.py", line 87, in optimal_transport
+    
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/bregman.py", line 159, in sinkhorn
     return sinkhorn_knopp(a, b, M, reg, numItermax=numItermax,
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/bregman.py", line 505, in sinkhorn_knopp
-    if (nx.any(KtransposeU == 0)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/backend.py", line 1051, in any
-    def any(self, a):
-    
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/bregman.py", line 521, in sinkhorn_knopp
+    tmp2 = nx.einsum('i,ij,j->j', u, K, v)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/ot/backend.py", line 1810, in einsum
+    return torch.einsum(subscripts, *operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/functional.py", line 386, in einsum
+    return _VF.einsum(equation, operands, path=path)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
     _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 110662) is killed by signal: Terminated. 
+RuntimeError: DataLoader worker (pid 112825) is killed by signal: Terminated. 
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/C3DTrainer.py", line 185, in <module>
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/C3DTrainer.py", line 183, in <module>
     trainer.fit(model, dataloader['train'], dataloader['val'])
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 529, in fit
     call._call_and_handle_interrupt(
@@ -126,6 +121,5 @@ Traceback (most recent call last):
                   ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
     _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 111170) is killed by signal: Terminated. 
-wandb: While tearing down the service manager. The following error has occurred: [Errno 32] Broken pipe
+RuntimeError: DataLoader worker (pid 112651) is killed by signal: Terminated. 
 srun: error: slurmnode2: task 0: Exited with exit code 1

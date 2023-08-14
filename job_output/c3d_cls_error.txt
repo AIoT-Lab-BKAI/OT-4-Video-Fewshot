@@ -1,0 +1,100 @@
+wandb: Currently logged in as: vuvietbach (aiotlab). Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.15.8 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.15.5
+wandb: Run data is saved locally in ./wandb/run-20230807_171816-n8shu32e
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run swept-salad-3
+wandb: ⭐️ View project at https://wandb.ai/aiotlab/c3d_classification
+wandb: 🚀 View run at https://wandb.ai/aiotlab/c3d_classification/runs/n8shu32e
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+You are using a CUDA device ('NVIDIA GeForce RTX 3090') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type | Params
+-------------------------------
+0 | model | C3D  | 78.4 M
+-------------------------------
+78.4 M    Trainable params
+0         Non-trainable params
+78.4 M    Total params
+313.638   Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:432: PossibleUserWarning: The dataloader, val_dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 64 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:432: PossibleUserWarning: The dataloader, train_dataloader, does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` (try 64 which is the number of cpus on this machine) in the `DataLoader` init to improve performance.
+  rank_zero_warn(
+wandb: Network error (ReadTimeout), entering retry loop.
+srun: got SIGCONT
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd-slurmnode3: error: *** STEP 12142.0 ON slurmnode3 CANCELLED AT 2023-08-08T03:24:42 ***
+slurmstepd-slurmnode3: error: *** JOB 12142 ON slurmnode3 CANCELLED AT 2023-08-08T03:24:42 ***
+srun: forcing job termination
+[rank: 0] Received SIGTERM: 15
+Bypassing SIGTERM: 15
+Traceback (most recent call last):
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/testC3D.py", line 299, in <module>
+    main()
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/testC3D.py", line 295, in main
+    trainer.fit(model, loader['train'], loader['val'])
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 529, in fit
+    call._call_and_handle_interrupt(
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 42, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 568, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 973, in _run
+    results = self._run_stage()
+              ^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1016, in _run_stage
+    self.fit_loop.run()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 202, in run
+    self.on_advance_end()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 383, in on_advance_end
+    trainer._logger_connector.update_train_epoch_metrics()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py", line 159, in update_train_epoch_metrics
+    self.log_metrics(self.metrics["log"])
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py", line 108, in log_metrics
+    logger.log_metrics(metrics=scalar_metrics, step=step)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/lightning_utilities/core/rank_zero.py", line 32, in wrapped_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loggers/wandb.py", line 433, in log_metrics
+    self.experiment.log(dict(metrics, **{"trainer/global_step": step}))
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 389, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 340, in wrapper_fn
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 330, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 1745, in log
+    self._log(data=data, step=step, commit=commit)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 1526, in _log
+    self._partial_history_callback(data, step, commit)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/wandb_run.py", line 1396, in _partial_history_callback
+    self._backend.interface.publish_partial_history(
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/interface/interface.py", line 584, in publish_partial_history
+    self._publish_partial_history(partial_history)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/interface/interface_shared.py", line 89, in _publish_partial_history
+    self._publish(rec)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/interface/interface_sock.py", line 51, in _publish
+    self._sock_client.send_record_publish(record)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/lib/sock_client.py", line 221, in send_record_publish
+    self.send_server_request(server_req)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/lib/sock_client.py", line 155, in send_server_request
+    self._send_message(msg)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/lib/sock_client.py", line 152, in _send_message
+    self._sendall_with_error_handle(header + data)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/wandb/sdk/lib/sock_client.py", line 130, in _sendall_with_error_handle
+    sent = self._sock.send(data)
+           ^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [Errno 32] Broken pipe
+wandb: While tearing down the service manager. The following error has occurred: [Errno 32] Broken pipe
+srun: error: slurmnode3: task 0: Exited with exit code 1

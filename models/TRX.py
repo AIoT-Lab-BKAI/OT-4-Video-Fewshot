@@ -8,8 +8,10 @@ from torch.autograd import Variable
 from torchvision.models import resnet50, ResNet50_Weights
 
 import torchvision.models as models
-
+from easydict import EasyDict as edict
 NUM_SAMPLES=1
+
+import configs.TRX as cfg
 
 def split_first_dim_linear(x, first_two_dims):
     """
@@ -159,7 +161,7 @@ class CNN_TRX(nn.Module):
     """
     def __init__(self, args):
         super(CNN_TRX, self).__init__()
-
+        args = edict(args)
         self.args = args
 
         if self.args.method == "resnet18":
@@ -175,11 +177,13 @@ class CNN_TRX(nn.Module):
         self.transformers = nn.ModuleList([TemporalCrossTransformer(args, s) for s in args.temp_set]) 
 
     def forward(self, context_images, context_labels, target_images):
-        # TODO: custom code
+        # TODO: custom code 
+        
         args = self.args
         n_way, n_shot, seq_len, n_query, img_size = args.n_way, args.n_shot, args.seq_len, args.n_query, args.img_size
         context_images = context_images.view(n_way*n_shot*seq_len, 3, img_size, img_size)
         target_images = target_images.view(n_way*n_query*seq_len, 3, img_size, img_size)
+        context_labels = context_labels.squeeze(0)
         #
 
         context_features = self.resnet(context_images).squeeze()
@@ -211,33 +215,14 @@ class CNN_TRX(nn.Module):
 
 
 if __name__ == "__main__":
-    class ArgsObject(object):
-        def __init__(self):
-            self.trans_linear_in_dim = 512
-            self.trans_linear_out_dim = 128
-
-            self.way = 5
-            self.shot = 1
-            self.query_per_class = 5
-            self.trans_dropout = 0.1
-            self.seq_len = 8 
-            self.img_size = 84
-            self.method = "resnet18"
-            self.num_gpus = 1
-            self.temp_set = [2,3]
-            self.n_way = 5
-            self.n_shot = 1
-            self.n_query = 5
-    
-    args = ArgsObject()
-    torch.manual_seed(0)
     
     device = 'cuda:0'
-    model = CNN_TRX(args).to(device)
+    model = CNN_TRX(cfg.model).to(device)
     
+    args = edict(cfg.model)
     support_imgs = torch.rand(args.way , args.shot , args.seq_len,3, args.img_size, args.img_size).to(device)
     target_imgs = torch.rand(args.way , args.query_per_class , args.seq_len ,3, args.img_size, args.img_size).to(device)
-    support_labels = torch.tensor([0,1,2,3,4]).to(device)
+    support_labels = torch.tensor([0,1,2,3,4]*args.shot).to(device)
 
     print("Support images input shape: {}".format(support_imgs.shape))
     print("Target images input shape: {}".format(target_imgs.shape))
@@ -245,9 +230,10 @@ if __name__ == "__main__":
 
     out = model(support_imgs, support_labels, target_imgs)
 
-    print("TRX returns the distances from each query to each class prototype.  Use these as logits.  Shape: {}".format(out['logits'].shape))
+    print("TRX returns the distances from each query to each class prototype.  Use these as logits.  Shape: {}".format(out.shape))
 
+    max_memory_allocated = torch.cuda.max_memory_allocated()
 
-
-
+    # print the result
+    print(f"Maximum GPU memory allocated by PyTorch: {max_memory_allocated / 1024**3:.2f} GB")
 

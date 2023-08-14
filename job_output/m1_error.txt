@@ -1,0 +1,112 @@
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+You are using a CUDA device ('NVIDIA GeForce RTX 3090') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+2023-08-07 14:50:25.550767: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE4.1 SSE4.2 AVX AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type   | Params
+---------------------------------
+0 | model | Model1 | 23.5 M
+---------------------------------
+23.5 M    Trainable params
+0         Non-trainable params
+23.5 M    Total params
+94.032    Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/_tensor.py:677: UserWarning: torch.lu is deprecated in favor of torch.linalg.lu_factor / torch.linalg.lu_factor_ex and will be removed in a future PyTorch release.
+LU, pivots = torch.lu(A, compute_pivots)
+should be replaced with
+LU, pivots = torch.linalg.lu_factor(A, compute_pivots)
+and
+LU, pivots, info = torch.lu(A, compute_pivots, get_infos=True)
+should be replaced with
+LU, pivots, info = torch.linalg.lu_factor_ex(A, compute_pivots) (Triggered internally at /opt/conda/conda-bld/pytorch_1682343995622/work/aten/src/ATen/native/BatchLinearAlgebra.cpp:1991.)
+  LU, pivots, infos = torch._lu_with_info(
+/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/qpth/solvers/pdipm/batch.py:395: UserWarning: torch.lu_solve is deprecated in favor of torch.linalg.lu_solveand will be removed in a future PyTorch release.
+Note that torch.linalg.lu_solve has its arguments reversed.
+X = torch.lu_solve(B, LU, pivots)
+should be replaced with
+X = torch.linalg.lu_solve(LU, pivots, B) (Triggered internally at /opt/conda/conda-bld/pytorch_1682343995622/work/aten/src/ATen/native/BatchLinearAlgebra.cpp:2148.)
+  G_invQ_GT = torch.bmm(G, G.transpose(1, 2).lu_solve(*Q_LU))
+Traceback (most recent call last):
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/M1Trainer.py", line 72, in <module>
+    trainer.fit(pl_module, dataloader['train'], dataloader['val'])
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 529, in fit
+    call._call_and_handle_interrupt(
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 42, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 568, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 973, in _run
+    results = self._run_stage()
+              ^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1016, in _run_stage
+    self.fit_loop.run()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 201, in run
+    self.advance()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 354, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 133, in run
+    self.advance(data_fetcher)
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 218, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 178, in run
+    closure()
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 140, in __call__
+    self._result = self.closure(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 126, in closure
+    step_output = self._step_fn()
+                  ^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 307, in _training_step
+    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 291, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 367, in training_step
+    return self.model.training_step(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/trainers/M1Trainer.py", line 21, in training_step
+    pred_logits = self.model(sp_set, sp_labels, q_set)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vinserver_user/bach.vv200061/optimal-transport-c3d/models/model1.py", line 43, in forward
+    q_set = self.resnet(q_set)
+            ^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torchvision/models/resnet.py", line 155, in forward
+    out = self.bn3(out)
+          ^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/modules/batchnorm.py", line 171, in forward
+    return F.batch_norm(
+           ^^^^^^^^^^^^^
+  File "/home/admin/miniconda3/envs/ot1/lib/python3.11/site-packages/torch/nn/functional.py", line 2450, in batch_norm
+    return torch.batch_norm(
+           ^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 92.00 MiB (GPU 0; 23.70 GiB total capacity; 11.24 GiB already allocated; 55.69 MiB free; 11.35 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+srun: error: slurmnode2: task 0: Exited with exit code 1

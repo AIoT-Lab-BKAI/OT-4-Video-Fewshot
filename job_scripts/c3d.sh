@@ -24,6 +24,5 @@ export PYTHONFAULTHANDLER=1
 # module load NCCL/2.4.7-1-cuda.10.0
 
 # run script from above
-CUDA_VISIBLE_DEVICES=0
 
 srun python trainers/C3DTrainer.py

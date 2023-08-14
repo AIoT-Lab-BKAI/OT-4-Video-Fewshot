@@ -1,19 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import ot
-from easydict import EasyDict as edict
-
-def cosine_similarity(set1, set2):
-    set1_norm = torch.linalg.norm(set1, dim=1, keepdim=True)
-    set1_normalized = set1 / set1_norm
-
-    set2_norm = torch.linalg.norm(set2, dim=1, keepdim=True)
-    set2_normalized = set2 / set2_norm
-
-    # Compute cosine similarity
-    cosine_sim= torch.mm(set1_normalized, set2_normalized.T)
-    return cosine_sim
+# import ot
+# from easydict import EasyDict as edict
+from utils.utils import cosine_similarity, emd_inference_qpth
 
 class C3D(nn.Module):
     """
@@ -59,7 +49,8 @@ class C3D(nn.Module):
             self.__init_weight()
         
         nseg = cfg['n_seg']
-        self.ot_dist= np.ones((nseg), dtype=np.float64) / nseg
+        self.dist1 = torch.ones((1, nseg)) / nseg
+        self.dist2 = torch.ones((1, nseg)) / nseg
         
         if cfg['use_positional_cost']:
             self.ot_reg = 7.0
@@ -79,14 +70,15 @@ class C3D(nn.Module):
         # normalize cost matrix
         # cost_matrix = cost_matrix / np.maximum(np.max(cost_matrix), 1.0)
         # tuning parameter
-        numItermax = self.cfg.numItermax if hasattr(self.cfg, 'numItermax') else 1000
+        numItermax = self.cfg.numItermax if hasattr(self.cfg, 'numItermax') else 2000
+        if self.dist1.device != cost_matrix.device:
+            self.dist1 = self.dist1.to(cost_matrix.device)
+            self.dist2 = self.dist2.to(cost_matrix.device)
         
-        trans_plan = ot.sinkhorn(self.ot_dist, self.ot_dist, cost_matrix, self.cfg.entropic_reg, numItermax=numItermax)
-        
-        # handle failed case
-        if (np.any(np.isnan(trans_plan)) or np.sum(trans_plan) == 0):
-            trans_plan = self.ot_dist[:, np.newaxis] * self.ot_dist[np.newaxis, :]
-        
+        cost_matrix = cost_matrix.unsqueeze(0)
+        _, trans_plan = emd_inference_qpth(cost_matrix, self.dist1, self.dist2)
+        trans_plan = trans_plan.squeeze(0)
+                
         return trans_plan
 
     def encode(self, x):
@@ -145,14 +137,11 @@ class C3D(nn.Module):
             for shot in range(total_sp):
                 cost_matrix[query, shot] = 1 - cosine_similarity(q_set[query], sp_set[shot])
         
-        cost_matrix_c = cost_matrix.detach().cpu().numpy().astype(np.float64)
-        trans_plan = np.zeros((total_query, total_sp, n_seg, n_seg), dtype=np.float64)
+        trans_plan = torch.zeros((total_query, total_sp, n_seg, n_seg), dtype=torch.float32).to(support_set.device)
         for query in range(total_query):
             for shot in range(total_sp):
-                trans_plan[query, shot] = self.optimal_transport(cost_matrix_c[query, shot])
-
+                trans_plan[query, shot] = self.optimal_transport(cost_matrix[query, shot])
         
-        trans_plan = torch.from_numpy(trans_plan).to(cost_matrix.device).float()
         # with regulization term
         # entropy = -torch.sum(trans_plan * torch.log(trans_plan + 1e-10), dim=(-2, -1))
         # trans_cost = torch.mul(cost_matrix, trans_plan).sum((-2, -1)) - self.cfg.entropic_reg*entropy
@@ -183,8 +172,8 @@ if __name__ == "__main__":
         n_shot = 1,
         entropic_reg = 1/7.0
     )
-    sp_set = torch.rand(5, 4, 3, 16, 112, 112).to(device)
-    q_set = torch.rand(5, 4, 3, 16, 112, 112).to(device)
+    sp_set = torch.rand(5, 4, 16, 3, 112, 112).to(device)
+    q_set = torch.rand(5, 4, 16, 3, 112, 112).to(device)
     net = C3D(args)
     net.to(device)
 
@@ -192,3 +181,4 @@ if __name__ == "__main__":
     # ckpt = torch.load(ckpt_path)
     # net.load_state_dict(ckpt['state_dict'])
     output = net(sp_set, q_set)
+    print(output.shape)

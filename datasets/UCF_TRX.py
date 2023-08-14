@@ -1,6 +1,8 @@
 import os
 import random
 import PIL
+from datasets.UCF101 import UCF101
+from datasets.UCF_model1 import FS_DS
 from torch.utils.data import Dataset, DataLoader
 from easyfsl.samplers import TaskSampler
 import torch
@@ -9,31 +11,12 @@ import numpy as np
 import glob
 from videotransforms.video_transforms import Compose, Resize, RandomCrop, RandomRotation, ColorJitter, RandomHorizontalFlip, CenterCrop, TenCrop
 from utils.utils import get_episodic_dataloader
-from easydict import EasyDict as edict
-class UCF_TRX(Dataset):
-    def __init__(self, args):
-        super(UCF_TRX, self).__init__()
-        args = edict(args)
-        self.args = args
 
-        self.data_dir = args.data_dir
-        self.seq_len = args.seq_len
-        self.img_size = args.img_size
-        self.train = args.train
-        self.data_path = args.data_path
-        
-        with open(self.data_path, 'r') as f:
-            self.data = f.readlines()
-        self.data = [x.strip() for x in self.data]
-        
-        self.classes = [path.split('/')[0] for path in self.data]
-        self.unique_classes = list(set(self.classes))
-        sorted(self.unique_classes)
-        self.class_id = {x:i for i, x in enumerate(self.unique_classes)}
-
-        self.data = [os.path.join(self.data_dir, x) for x in self.data]
-        self.data = [list(glob.glob(os.path.join(x, '*.jpg'))) for x in self.data]
-        
+class UCF_TRX(UCF101):
+    def __init__(self, root_dir, split_path, class_id_path, img_size, seq_len, train=False):
+        super(UCF_TRX, self).__init__(root_dir, split_path, class_id_path, train)
+        self.img_size = img_size
+        self.seq_len = seq_len
         self.setup_transforms()
     
     def setup_transforms(self):
@@ -45,17 +28,15 @@ class UCF_TRX(Dataset):
         else:
             print("img size transforms not setup")
             exit(1)
+        
         if not self.train:
             video_transforms.append(CenterCrop(self.img_size))
         else:
             video_transforms.append(RandomHorizontalFlip())
             video_transforms.append(RandomCrop(self.img_size))
-
+        
         self.video_transforms = Compose(video_transforms)
-        self.tensor_transform = transforms.ToTensor()
-
-    def __len__(self):
-        return len(self.data)
+        self.tensor_trasforms = transforms.ToTensor()
     
     def sample_frames(self, n_frames):
         if n_frames == self.seq_len:
@@ -86,34 +67,39 @@ class UCF_TRX(Dataset):
             if self.seq_len == 1:
                 idxs = [random.randint(start, end-1)]
         return idxs
-    def __getitem__(self, idx):
-        res = []
-        for i in idx:
-            res.append(self.__getitem1__(i))
-        return res
 
-    def __getitem1__(self, idx):
-        frames_id = self.sample_frames(len(self.data[idx]))
-        frames = [PIL.Image.open(self.data[idx][i]) for i in frames_id]
+    def __getitem__(self, idx):
+        data = self.paths[idx]
+        frames_id = self.sample_frames(len(data))
+        frames = [PIL.Image.open(data[i]) for i in frames_id]
+        
         frames = self.video_transforms(frames)
-        frames = [self.tensor_transform(f) for f in frames]
+        frames = [self.tensor_trasforms(frame) for frame in frames]
         frames = torch.stack(frames, dim=0)
 
-        return frames, torch.tensor(self.class_id[self.classes[idx]])
-    
-    def get_labels(self):
-        return self.classes
+        labels = torch.tensor(self.labels[idx])
+
+        return frames, labels
 
 if __name__ == '__main__':
-    from easydict import EasyDict as edict
-    args = edict(data_path = 'splits/ucf_ARN/trainlist03.txt',
-                data_dir='data/ucf101',
-                img_size=224,
-                seq_len=8,
-                train=True,
-                )
-    dataset = UCF_TRX(args)
-    dataloader = get_episodic_dataloader(dataset, 5, 5, 5, 10)
-    for task in dataloader:
+    args = dict(
+        root_dir='data/ucf101',
+        split_path = 'splits/ucf_ARN/trainlist03.txt',
+        class_id_path = 'splits/classes.json',
+        img_size=224,
+        seq_len=8,
+        train=True,
+    )
+    sampler_cfg = dict(
+        n_tasks=10000,
+        n_way=5,
+        n_shot=5,
+        n_query=5,
+    )
+    dataset = UCF_TRX(**args)
+    dataset = FS_DS(dataset, **sampler_cfg)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4)
+    for i, batch in enumerate(dataloader):
         import pdb; pdb.set_trace()
+
     
