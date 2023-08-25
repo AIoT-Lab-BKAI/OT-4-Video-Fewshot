@@ -4,7 +4,7 @@ from pytorch_lightning.strategies import DeepSpeedStrategy
 sampler_common = dict(
     n_way = 5,
     n_shot = 1,
-    n_query = 5,
+    n_query = 6,
 )
 ds_common = dict(
     root_dir='data/ucf101',
@@ -15,7 +15,7 @@ ds_common = dict(
 sampler = dict(
     train = dict(
         **sampler_common,
-        n_tasks=5000,
+        n_tasks=10000,
     ),
     val = dict(
         **sampler_common,
@@ -23,7 +23,7 @@ sampler = dict(
     ),
     test = dict(
         **sampler_common,
-        n_tasks=1000,
+        n_tasks=10000,
     ),
 )
 dataset = dict(
@@ -48,12 +48,21 @@ model = dict(
 
     DATA = dict(
         NUM_INPUT_FRAMES = 8
-    )
+    ),
+    USE_OT = False
 )
 
 pl_module = dict(
     recons_coef = 0.1,
     contrastive_coef = 0.05,
+    optimizer=dict(
+        weight_decay = 5e-4,
+    ),
+    bn = dict(
+        weight_decay = 0,
+    ),
+    accum_grad = 8,
+    log_freq = 50,
 )
 
 logger = dict(
@@ -74,11 +83,10 @@ trainer = dict(
     
     max_epochs=1,
     
-    check_val_every_n_epoch=None,
+    # check_val_every_n_epoch=None,
     val_check_interval=500,
-
-    accumulate_grad_batches=4,
-    log_every_n_steps=10,
+    
+    log_every_n_steps=50,
 )
 optimizer = dict(
 )

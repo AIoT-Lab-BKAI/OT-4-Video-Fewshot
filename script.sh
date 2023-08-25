@@ -11,8 +11,9 @@ srun --nodelist=slurmnode3 nvidia-smi
 deepspeed --include localhost:1,2 train.py --deepspeed --deepspeed_config configs/ds_config.json
 PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python trainers/TRXTrainer.py
 PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python trainers/TRXTrainer.py --cfg configs/m1.py
-PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python runs/train_molo_ot.py
 PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python runs/train_molo_ot.py --log
+PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python runs/train_molo_ot.py 
+PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python test.py 
 
 
 

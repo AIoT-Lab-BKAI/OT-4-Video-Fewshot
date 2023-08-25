@@ -45,7 +45,11 @@ class Base_Fewshot_Dataset(Dataset):
         return self.n_tasks
     
     def __getitem__(self, idx):
-        ids = next(self.iter)
+        try:
+            ids = next(self.iter)
+        except StopIteration:
+            self.iter = iter(self.sampler)
+            ids = next(self.iter)
         data = []
         for id in ids:
             data.append(self.dataset[id])
