@@ -1,4 +1,24 @@
-All config file for model can be found in folder config/
-Since data test is limited (10 classes 2 data instance each), only config opt_test.yaml is valid
-Download data from https://husteduvn-my.sharepoint.com/:f:/g/personal/bach_vv200061_sis_hust_edu_vn/EnnHqTr_3x1Ai4NILzm2eKEBHE8TZ8Fd8kiSwAZv9_sFDA?e=UDqOnu
-To run TRX model, please use python trainer.py
+Download UCF Data using this command in terminal
+kaggle datasets download -d pevogam/ucf101
+
+After download data, process each video into a folder of frame, the folder has the same name as the video but without the suffix .avi
+The data directory has the following structure
+data
+    ucf101
+        ApplyEyeMakeup
+            v_ApplyEyeMakeup_g01_c01
+                00000.jpg
+                00001.jpg
+                00002.jpg
+                00003.jpg
+            v_ApplyEyeMakeup_g01_c02
+            v_ApplyEyeMakeup_g01_c03
+
+
+To setup conda enviroment run this command
+conda env create -f env.yml
+
+To run training script, use this bash command
+PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  python runs/train_molo_ot.py 
+
+
