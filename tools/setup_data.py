@@ -19,7 +19,7 @@ def main():
     parser.add_argument('--data_src', required=True, type=str, help='path to folder containe class data ex: ApplyEyeMakeup')
     args = parser.parse_args()
     
-    dest_dir = "data/ucf101-test"
+    dest_dir = "data/ucf101"
     
     class_names = os.listdir(args.data_src)
     class_names.sort()
@@ -29,10 +29,12 @@ def main():
         os.makedirs(os.path.join(dest_dir, class_name), exist_ok=True)
     
     for class_path in class_paths:
+        class_name = os.path.basename(class_path)
         video_paths = glob.glob(os.path.join(class_path, "*.avi"))
         for video_path in video_paths:
             video_frames = read_video(video_path)
-            save_frame_dir = video_path.replace(args.data_src, dest_dir).replace(".avi", "")
+            video_name = os.path.basename(video_path).replace(".avi", "")
+            save_frame_dir = os.path.join(dest_dir, class_name, video_name)
             os.makedirs(save_frame_dir, exist_ok=True)
             for i, frame in enumerate(video_frames):
                 # frame id has 5 digits

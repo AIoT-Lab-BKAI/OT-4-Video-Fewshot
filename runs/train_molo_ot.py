@@ -83,6 +83,9 @@ class BasicModule(pl.LightningModule):
                 
         self.log('val_loss', res['loss'], on_epoch=True, batch_size=1, prog_bar=True)
         self.log('val_acc', res['acc'], on_epoch=True, batch_size=1, prog_bar=True)
+        self.log('val_loss_contrastive', res['loss_contrastive'], on_step=True, prog_bar=True)
+        self.log('val_loss_recons', res['loss_recons'], on_step=True, prog_bar=True)
+        self.log('val_loss_logit', res['loss_logit'], on_step=True, prog_bar=True)
     
     def on_test_start(self):
         self.accuracies = []
@@ -174,7 +177,7 @@ if __name__ == '__main__':
 
     trainer = pl.Trainer(**cfg.trainer, logger=logger, callbacks=cbs)
     trainer.fit(model, dataloader['train'], dataloader['val'])
-    trainer.test(dataloaders=dataloader['test'], ckpt_path='best')
+    # trainer.test(dataloaders=dataloader['test'], ckpt_path='best')
 
 
 

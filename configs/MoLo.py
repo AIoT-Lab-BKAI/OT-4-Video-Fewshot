@@ -15,7 +15,7 @@ ds_common = dict(
 sampler = dict(
     train = dict(
         **sampler_common,
-        n_tasks=15000,
+        n_tasks=10000,
     ),
     val = dict(
         **sampler_common,
@@ -23,7 +23,7 @@ sampler = dict(
     ),
     test = dict(
         **sampler_common,
-        n_tasks=10000,
+        n_tasks=1000,
     ),
 )
 dataset = dict(
