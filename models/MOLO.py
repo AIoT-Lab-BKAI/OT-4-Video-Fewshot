@@ -220,7 +220,6 @@ class CNN_BiMHM_MoLo(nn.Module):
         target_features = target_features[:,1:,:]
         # calculate contrastive
         # support to query
-        import pdb; pdb.set_trace()
         
         class_sim_s2q = cos_sim(support_features, target_features_g)  # [5, 8, 35]
         class_dists_s2q = 1 - class_sim_s2q

@@ -37,17 +37,23 @@ class BasicModule(pl.LightningModule):
         query_labels = input['query_labels']
         query_labels = query_labels.view(-1).long()
         
-        loss = F.cross_entropy(input["logits"], query_labels)
+        loss = 0
+        loss_logit = F.cross_entropy(input["logits"], query_labels)
+        
+        loss+=loss_logit
+
         loss += self.cfg['recons_coef'] * input['loss_recons']
         
         coef = self.cfg['contrastive_coef']
-        loss += coef * F.cross_entropy(input["logits_s2q"], query_labels) 
-        loss += coef * F.cross_entropy(input["logits_q2s"], query_labels)
-        loss += coef * F.cross_entropy(input["logits_s2q_motion"], query_labels)
-        loss += coef * F.cross_entropy(input["logits_q2s_motion"], query_labels)
+        loss_contrastive = 0
+        loss_contrastive += F.cross_entropy(input["logits_s2q"], query_labels)
+        loss_contrastive += F.cross_entropy(input["logits_q2s"], query_labels)
+        loss_contrastive += F.cross_entropy(input["logits_s2q_motion"], query_labels)
+        loss_contrastive += F.cross_entropy(input["logits_q2s_motion"], query_labels)
+        loss += coef * loss_contrastive
 
         acc = accuracy(input['logits'], query_labels)
-        return {"loss": loss, "acc":acc}
+        return {"loss": loss, "acc":acc, "loss_contrastive": loss_contrastive, "loss_recons": input['loss_recons'], "loss_logit": loss_logit}
     
     def training_step(self, batch, batch_idx):  
         batch['train'] = True      
@@ -67,6 +73,9 @@ class BasicModule(pl.LightningModule):
         if batch_idx % self.cfg['log_freq'] == 0:
             self.log('train_loss', self.train_loss_ra.get_avg(), on_step=True, prog_bar=True)
             self.log('train_acc', self.train_acc_ra.get_avg(), on_step=True, prog_bar=True)
+            self.log('train_loss_contrastive', res['loss_contrastive'], on_step=True, prog_bar=True)
+            self.log('train_loss_recons', res['loss_recons'], on_step=True, prog_bar=True)
+            self.log('train_loss_logit', res['loss_logit'], on_step=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         predict = self.model(batch)
@@ -165,7 +174,7 @@ if __name__ == '__main__':
 
     trainer = pl.Trainer(**cfg.trainer, logger=logger, callbacks=cbs)
     trainer.fit(model, dataloader['train'], dataloader['val'])
-    trainer.test(model, dataloader['test'])
+    trainer.test(dataloaders=dataloader['test'], ckpt_path='best')
 
 
 
